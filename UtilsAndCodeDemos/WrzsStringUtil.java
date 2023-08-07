@@ -1,7 +1,8 @@
-package com.common.utils;
+package com.by4cloud.platform.wrzs.utils;
 
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.StrUtil;
+import net.sourceforge.pinyin4j.PinyinHelper;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
@@ -11,10 +12,12 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Objects.isNull;
+
 /**
- * 处理车牌号等工具类
+ * 无人值守处理车牌号等工具类
  * */
-public class CarNOUtil {
+public class WrzsStringUtil {
 
 
     /**
@@ -114,6 +117,7 @@ public class CarNOUtil {
 
     }
 
+	//逗号拼接车牌号转为数组
     public static List<String> getCarNumAsList(String carNos){
         if(StrUtil.isEmpty(carNos))
             return new ArrayList<>();
@@ -122,6 +126,27 @@ public class CarNOUtil {
         return Arrays.asList(strings);
     }
 
+    //获取字符串首字母
+    public static String getPinYinHeadChar(String str) {
+        if (isNull(str)) {
+            return "";
+        }
+        String convert = "";
+        for (int j = 0; j < str.length(); j++) {
+            char word = str.charAt(j);
+            // 提取汉字的首字母
+            String[] pinyinArray = PinyinHelper.toHanyuPinyinStringArray(word);
+            if (pinyinArray != null) {
+                convert += pinyinArray[0].charAt(0);
+            }
+            else {
+                convert += word;
+            }
+        }
+
+        convert = replaceAllBlanks(convert);
+        return convert.toUpperCase();
+    }
 
 
 }

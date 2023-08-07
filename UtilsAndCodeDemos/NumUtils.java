@@ -1,11 +1,8 @@
-package com.by4cloud.platform.scdd.util;
+package com.by4cloud.platform.wrzs.utils;
 
 import java.math.BigDecimal;
 
-/**
- * @author xfei
- * @date 2022/5/27下午8:26
- */
+//处理float,double工具类
 public class NumUtils {
 	/**
 	 * 精确小数
@@ -172,6 +169,11 @@ public class NumUtils {
 			return new Double(0);
 		}
 		return new Double(f);
+	}
+
+	public static void main(String[] args) {
+		System.out.println(NumUtils.accurateDouble(60.1575,3));
+		System.out.println(NumUtils.addDouble(6.1234d,6.1234d,3));
 	}
 
 }
