@@ -4,9 +4,11 @@
    上面这个链接会访问D:\tomcat_files\note.txt文件	
    <img src="http://localhost:8080/files/qq.jpg">图片QQ</img>
    上面这个链接会访问D:\tomcat_files\qq.jpg文件
+   注意：访问连接带上文件后缀。
 2,conf/server.xml文件里设置url虚拟路径映射到服务器本地目录 
  <Host>
    ....
    <Context path="/files" docBase="D:\tomcat_files" reloadable="true" />
  </Host>
- 3,如果docBase="\tomcat_files\photos"是相对路径，则默认从项目所在磁盘为根路径
+ 3,如果docBase="\tomcat_files\photos"是相对路径，则默认tomcat的webapps为根路径，即\tomcat_files\photos文件加必须存在于webapps目录下，否则启动报错
+   
