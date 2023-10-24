@@ -1,0 +1,6 @@
+		<!--word转pdf-->
+		<dependency>
+			<groupId>aspose.words</groupId>
+			<artifactId>words-jar</artifactId>
+			<version>1.0</version>
+		</dependency>
