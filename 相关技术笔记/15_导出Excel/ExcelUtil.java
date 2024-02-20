@@ -18,10 +18,12 @@ public class ExcelUtil {
     public static void setCell(int i, Object val, XSSFRow row, XSSFCellStyle style){
         Cell cell = row.createCell(i);
         if (val!=null){
+			//如果是double类型数据，导出Excel表格时设置为数字格式
         	if(val instanceof Double){
         		Double d = (Double) val;
-				cell.setCellValue(d);
+				cell.setCellValue(d);    //setCellValue(..) is an overloaded method.
 			}else{
+				//这里是设置为文本格式。
 				cell.setCellValue(new XSSFRichTextString(val.toString()));
 			}
         }else {
