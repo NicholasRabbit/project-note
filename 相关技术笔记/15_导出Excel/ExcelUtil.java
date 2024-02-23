@@ -207,6 +207,8 @@ public class ExcelUtil {
 
 		XSSFFont titleFont = workbook.createFont();
 		titleFont.setBold(true);//加粗
+		//set the theme colour
+		titleFont.setThemeColor(IndexedColors.BLUE_GREY.getIndex());
 		style.setFont(titleFont);
 
 		return style;
