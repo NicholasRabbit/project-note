@@ -4,6 +4,7 @@
  * 复杂格式的表格，合并单元格，纵向合并等，具体结合Apache文档理解
  * */
 
+	//导出接口
 	@ApiOperation(value = "生成excel", notes = "生成excel")
 	@Inner(false)
 	@GetMapping("/createExcel")
@@ -48,6 +49,7 @@
 	}
 
 	private static void generateExcel(String title, Map<String, List<Project>> resMap, HttpServletResponse response) throws Exception {
+		//设置响应体格式
 		response.setContentType("application/vnd.ms-excel");
 		response.setHeader("content-disposition", "attachement;filename=" + new String((title + ".xls").getBytes("gb2312"), "ISO8859-1"));
 		ServletOutputStream os = null;
