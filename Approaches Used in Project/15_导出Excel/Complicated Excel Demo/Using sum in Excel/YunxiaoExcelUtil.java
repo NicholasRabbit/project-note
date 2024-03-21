@@ -470,4 +470,185 @@ public class YunxiaoExcelUtil{
 	}
 
 
+	
+	//地销月报表，见同目录下医生称的Excel样板
+	public static void generateExcelMonthSale(String title, List<DaySaleVo> list, HttpServletResponse response, String startDate, String endDate, Map<String, String> headMap) throws Exception {
+
+		response.setContentType("application/vnd.ms-excel");
+		response.setHeader("content-disposition", "attachement;filename=" + new String((title + ".xls").getBytes("gb2312"), "ISO8859-1"));
+		ServletOutputStream os = null;
+		os = response.getOutputStream();
+		BufferedOutputStream bos = new BufferedOutputStream(os);
+		//创建工作薄
+		XSSFWorkbook workbook = new XSSFWorkbook();
+		//创建表单
+		XSSFSheet sheet = ExcelUtilStatic.genSheet(workbook, "excel");
+		//创建表单样式
+		Map<String, XSSFCellStyle> styleMap = ExcelUtilStatic.getStyleMap(workbook);
+		//创建Excel
+		genExcelByMonthSale(title, list, sheet, styleMap, headMap);
+
+		//将工作薄写入文件输出流中
+		workbook.write(bos);
+	}
+
+	private static void genExcelByMonthSale(String title, List<DaySaleVo> list, XSSFSheet sheet, Map<String, XSSFCellStyle> styleMap, Map<String, String> headMap) {
+		//设置宽度
+		for (int i = 0; i < 6; i++) {
+			if (i == 1) {
+				sheet.setColumnWidth(i, 10000);
+			} else {
+				sheet.setColumnWidth(i, 3000);
+			}
+
+		}
+
+		//设置标题位置
+		sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 5));
+		XSSFRow row = sheet.createRow(0);//创建第一行，为标题，index从0开始
+		ExcelUtilStatic.setCell(0, title, row, styleMap.get("title"));
+
+		//创建第二行
+		row = sheet.createRow(1);
+		ExcelUtilStatic.setCell(0, "日期：", row, styleMap.get("left"));
+		ExcelUtilStatic.setCell(1, headMap.get("startDate") + "至" + headMap.get("endDate"), row, styleMap.get("left"));
+
+
+		//创建第三行
+		row = sheet.createRow(2);
+		ExcelUtilStatic.setCell(0, "煤种", row, styleMap.get("header"));
+		ExcelUtilStatic.setCell(1, "客户名称", row, styleMap.get("header"));
+		ExcelUtilStatic.setCell(2, "总量(吨)", row, styleMap.get("header"));
+		ExcelUtilStatic.setCell(4, "结余(吨)", row, styleMap.get("header"));
+		ExcelUtilStatic.setCell(3, "取煤量(吨)", row, styleMap.get("header"));
+		ExcelUtilStatic.setCell(5, "发车数", row, styleMap.get("header"));
+
+
+
+
+		int rowNum = 3;
+		int startRow = 3;
+		int startRowCoalName = 3;
+		int endRow = 3;
+
+		//合计数据Map，StringBuilder用于最后总计公式
+		Map<String, StringBuilder> sumMap = new HashMap<>();   //每个矿别对应的客户合计公式，用于各矿别合计
+		StringBuilder sb;
+
+		for (int i = 0; i < list.size(); i++) {
+			DaySaleVo data = list.get(i);
+			DaySaleVo formerRow = null;
+			//从数据的第二条开始判断
+			if (i > 2)
+				formerRow = list.get(i - 1);
+			//先根据客户合计
+			if (i > 2 && !data.getCoalName().equals(formerRow.getCoalName())) {
+				//添加总计数据
+				row = sheet.createRow(rowNum++);
+				ExcelUtilStatic.setCell(1, "合计", row, styleMap.get("bold"));
+				//合计各列数据: 2~5
+				for (int j = 0, k = 2; j < 5 && k < 6; j++, k++) {
+					char starCell = (char) ('C' + j); //从H列开始，依次递增。ASCII Code, A + 1,2,3 = B,C,D...C,K
+					char endCell = (char) ('C' + j);
+					String ref = starCell + "" + (startRowCoalName + 1) + ":" + endCell + (endRow);  //Excel行号从1开始
+
+					if(k == 5)
+						ExcelUtilStatic.setCellFormula(k, "SUM(" + ref + ")", row, styleMap.get("right"));   //车辆数格式设置
+					else
+						ExcelUtilStatic.setCellFormula(k, "SUM(" + ref + ")", row, styleMap.get("number:0.00"));
+
+					//拼接所有收货单位合计数据在Excel中的位置，用于最后总计公式
+					String col = String.valueOf(endCell).substring(0, 1);  //列名
+					//原有列名则拿出来拼接，拼接最后总计的公式
+					if (sumMap.containsKey(col)) {
+						sb = sumMap.get(col);
+						sb = sb.append(endCell + "" + (endRow + 1));   //Excel行号从1开始
+					} else {
+						//否则按列名新建
+						sb = new StringBuilder(endCell + "" + (endRow + 1));
+					}
+					sb.append("+");
+					sumMap.put(col, sb);
+
+				}
+				//合并相同煤种
+				sheet.addMergedRegion(new CellRangeAddress(startRowCoalName, endRow, 0, 0));
+				startRowCoalName = endRow + 1;
+				endRow++;
+			}
+
+			//遍历每条数据
+			row = sheet.createRow(rowNum++);
+			ExcelUtilStatic.setCell(0, data.getCoalName(), row, styleMap.get("left"));
+			ExcelUtilStatic.setCell(1, data.getCustomerName(), row, styleMap.get("left"));
+			ExcelUtilStatic.setCell(2, data.getTotalQuantity(), row, styleMap.get("right"));
+			ExcelUtilStatic.setCell(3, data.getResidualQuantity(), row, styleMap.get("number:0.00"));
+			ExcelUtilStatic.setCell(4, data.getSaleQuantity(), row, styleMap.get("right"));
+			ExcelUtilStatic.setCell(5, data.getCarQuantity(), row, styleMap.get("number:0.00"));
+
+			//最后一行
+//			if (i == list.size() - 1) {
+//				sheet.addMergedRegion(new CellRangeAddress(startRow, endRow + 2, 0, 0));
+//			}
+
+			endRow++;
+
+			if (i == list.size() - 1) {
+				//最后一个煤种合计
+				row = sheet.createRow(rowNum++);
+				ExcelUtilStatic.setCell(1, "合计", row, styleMap.get("bold"));
+
+				//合计各列数据: 2~5
+				for (int j = 0, k = 2; j < 4 && k < 6; j++, k++) {
+					char starCell = (char) ('C' + j); //从H列开始，依次递增。ASCII Code, A + 1,2,3 = B,C,D...C,K
+					char endCell = (char) ('C' + j);
+					String ref = starCell + "" + (startRowCoalName + 1) + ":" + endCell + (endRow);  //Excel行号从1开始
+
+					if(k == 5)
+						ExcelUtilStatic.setCellFormula(k, "SUM(" + ref + ")", row, styleMap.get("right"));   //车辆数格式设置
+					else
+						ExcelUtilStatic.setCellFormula(k, "SUM(" + ref + ")", row, styleMap.get("number:0.00"));
+
+					//拼接所有收货单位合计数据在Excel中的位置，用于最后总计公式
+					String col = String.valueOf(endCell).substring(0, 1);  //列名
+					//原有列名则拿出来拼接，拼接最后总计的公式
+					if (sumMap.containsKey(col)) {
+						sb = sumMap.get(col);
+						sb = sb.append(endCell + "" + (endRow + 1));   //Excel行号从1开始
+					} else {
+						//否则按列名新建
+						sb = new StringBuilder(endCell + "" + (endRow + 1));
+					}
+					sb.append("+");
+					sumMap.put(col, sb);
+
+				}
+				//合并相同煤种
+				sheet.addMergedRegion(new CellRangeAddress(startRowCoalName, endRow, 0, 0));
+			}
+
+		}
+
+
+		//添加总计数据
+		row = sheet.createRow(rowNum++);
+		ExcelUtilStatic.setCell(0, "总计", row, styleMap.get("bold"));
+		ExcelUtilStatic.setCell(1, "", row, styleMap.get("bold"));
+		for (int j = 0, k = 2; j < 4 && k < 6; j++, k++) {
+			char col = (char) ('C' + j);
+			String ref = sumMap.get(String.valueOf(col)).toString();  //取出公式
+			ref = ref.substring(0, ref.length() - 1);  //去掉最后一个加号
+
+			if(k == 5)
+				ExcelUtilStatic.setCellFormula(k, "SUM(" + ref + ")", row, styleMap.get("right"));   //车辆数格式设置
+			else
+				ExcelUtilStatic.setCellFormula(k, "SUM(" + ref + ")", row, styleMap.get("number:0.00"));
+		}
+		//合并最后一行总计数据中间列。
+		//sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 1, 5));
+
+	}
+
+
+
 }
